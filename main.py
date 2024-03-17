@@ -18,7 +18,7 @@ TRACK_BORDER = pygame.image.load("assets/track-hitbox.png")
 TRACK_BORDER_MASK = pygame.mask.from_surface(TRACK_BORDER)
 
 CAR = scale_image(pygame.image.load("assets/car.png"), 0.5)
-CAR_MASK = pygame.mask.from_surface(scale_image(pygame.image.load("assets/car-hitbox.png"), 0.4))
+CAR_MASK = pygame.mask.from_surface(scale_image(pygame.image.load("assets/car-hitbox.png"), 0.5))
 
 WIN_SIZE = (1280, 720)
 WIN = pygame.display.set_mode(WIN_SIZE, flags=pygame.SCALED, vsync=1)
@@ -75,13 +75,17 @@ class Car:
     def collide(self, mask, x=0, y=0):
         offset = (int(self.x - x), int(self.y - y))
         intersection_point = mask.overlap(CAR_MASK, offset)
-        print(intersection_point)
+        # print(intersection_point)
         return intersection_point
     
     def hit_wall(self):
-        self.vel = -self.vel/2
-        self.move()
-        
+        if self.vel > 0.1:
+            self.vel = -self.vel/2
+            self.move()
+        else:
+            self.vel = -self.vel
+            self.move()
+
 
 
 def draw(win, images, car):
@@ -124,9 +128,17 @@ while running:
     if not moving:
         car.reduce_speed()
 
+    # print(car.vel)
+
 
     if car.collide(TRACK_BORDER_MASK) != None:
-        car.hit_wall()
+        if car.vel == 0:    # if stuck force the car the other way
+            if keys[pygame.K_w]:
+                car.vel = -2
+            elif keys[pygame.K_s]:
+                car.vel = 2
+        else:
+            car.hit_wall()
     
 
 pygame.quit()
