@@ -14,8 +14,9 @@ ACCELERATION = 0.1
 class Car:
     def __init__(self):
         self.img = CAR
+        self.mask = CAR_MASK
         self.x, self.y = CAR_START_POS
-        self.angle = 270
+        self.angle = 0
         self.vel = 0
         self.max_vel = MAX_VELOCITY
         self.rotation_vel = ROTATION_VELOCITY
@@ -39,7 +40,7 @@ class Car:
         self.move()
 
     def move(self):
-        radians = math.radians(self.angle)
+        radians = math.radians(self.angle + 270)
         vertical = math.cos(radians) * self.vel
         horizontal = math.sin(radians) * self.vel
 
@@ -52,8 +53,7 @@ class Car:
 
     def collide(self, mask, x=0, y=0):
         offset = (int(self.x - x), int(self.y - y))
-        intersection_point = mask.overlap(CAR_MASK, offset)
-        # print(intersection_point)
+        intersection_point = mask.overlap(self.mask, offset)
         return intersection_point
     
     def hit_wall(self):

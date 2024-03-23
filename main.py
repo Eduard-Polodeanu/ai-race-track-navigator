@@ -60,6 +60,9 @@ while running:
     move(car, keys)
 
     if car.collide(TRACK_BORDER_MASK) != None:
+        pygame.draw.circle(WIN, (255, 0, 0), car.collide(TRACK_BORDER_MASK), 4)
+        pygame.display.update()
+
         if car.vel == 0:    # if stuck, force the car the other way
             unstuck(car, keys)
         else:
