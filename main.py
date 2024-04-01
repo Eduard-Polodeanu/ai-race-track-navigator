@@ -1,3 +1,4 @@
+import math
 import pygame
 from car import Car
 
@@ -20,8 +21,6 @@ def draw(win, car):
     win.blit(TRACK_BORDER, (0, 0))
 
     car.draw(win)
-
-    pygame.display.update()
 
 def move(car, keys):
     moving = False
@@ -61,12 +60,25 @@ while running:
 
     if car.collide(TRACK_BORDER_MASK) != None:
         pygame.draw.circle(WIN, (255, 0, 0), car.collide(TRACK_BORDER_MASK), 4)
-        pygame.display.update()
-
         if car.vel == 0:    # if stuck, force the car the other way
             unstuck(car, keys)
         else:
             car.hit_wall()
     
+    
+    line_surface = pygame.Surface((WIN_SIZE[0]-5, WIN_SIZE[1]-5), pygame.SRCALPHA)
+    end_x = car.x + math.cos(math.radians(car.angle)) * WIN_SIZE[0]
+    end_y = car.y - math.sin(math.radians(car.angle)) * WIN_SIZE[1]
+    pygame.draw.line(line_surface, (0,0,255), (car.x + car.img.get_width() / 2, car.y + car.img.get_height() / 2), (end_x, end_y), 3)
+    line_mask = pygame.mask.from_surface(line_surface)
+    if line_mask.overlap(TRACK_BORDER_MASK, (0,0)):
+        poc = line_mask.overlap(TRACK_BORDER_MASK, (0,0))
+        pygame.draw.line(line_surface, (0,255,0), (car.x + car.img.get_width() / 2, car.y + car.img.get_height() / 2), poc, 4)
+        WIN.blit(line_surface, (0, 0))
+        print("Collision detected on " + str(poc))
+
+
+    pygame.display.update()
+
 
 pygame.quit()
