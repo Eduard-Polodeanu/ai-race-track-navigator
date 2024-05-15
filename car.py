@@ -1,10 +1,11 @@
 import pygame
 import math
+import tensorflow as tf
 from utils import blit_rotate_center, scale_image
 
 CAR = scale_image(pygame.image.load("assets/car.png"), 0.5)
 CAR_MASK = pygame.mask.from_surface(scale_image(pygame.image.load("assets/car-hitbox.png"), 0.5))
-CAR_START_POS = (400, 64)
+CAR_START_POS = (600, 128)
 
 MAX_VELOCITY = 4
 ROTATION_VELOCITY = 4
@@ -22,7 +23,9 @@ class Car:
         self.rotation_vel = ROTATION_VELOCITY
         self.acceleration = ACCELERATION
 
+
     def rotate(self, left=False, right=False):
+        self.angle = self.angle % 360
         if left:
             self.angle += self.rotation_vel
         elif right:
@@ -40,7 +43,7 @@ class Car:
         self.move()
 
     def move(self):
-        radians = math.radians(self.angle + 270)
+        radians = math.radians((self.angle + 270) % 360)
         vertical = math.cos(radians) * self.vel
         horizontal = math.sin(radians) * self.vel
 
@@ -63,3 +66,12 @@ class Car:
         else:
             self.vel = -self.vel
             self.move()
+
+    def setup_model(self):
+        model = tf.keras.Sequential([
+            tf.keras.layers.Dense(8, activation='relu', input_dim=3),  # Hidden layer with 8 neurons and ReLU activation
+            tf.keras.layers.Dense(4, activation='sigmoid')  # Output layer with 4 neurons and sigmoid activation
+        ])
+        model.compile(optimizer='adam', loss='binary_crossentropy')
+        return model
+    
