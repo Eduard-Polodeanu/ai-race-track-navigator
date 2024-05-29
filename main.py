@@ -15,10 +15,8 @@ WIN = pygame.display.set_mode(WIN_SIZE, flags=pygame.SCALED, vsync=1)
 FPS = 60
 
 
-car = Car()
-model = car.setup_model()
 
-def draw(win, car):
+def draw(win):
     win.blit(TRACK, (0, 0))
     win.blit(TRACK_BORDER, (0, 0))
 
@@ -54,48 +52,24 @@ def unstuck(car, keys):
         car.vel = 2
 
 
-def calculate_distance(start_point, end_point):
-    cateta1 = abs(end_point[0] - start_point[0])
-    cateta2 = abs(end_point[1] - start_point[1])
-    distance = int(math.sqrt(cateta1*cateta1 + cateta2*cateta2))
-    return distance
-
-
-def draw_rays(win, surface, step, end_point):
-    ray_start_mid = (car.x + car.img.get_width() / 2, car.y + car.img.get_height() / 2)
-    pygame.draw.line(surface, (0,0,255), (ray_start_mid), (end_point), 1)
-    line_mask = pygame.mask.from_surface(surface)
-
-    if not line_mask.overlap(TRACK_BORDER_MASK, (0,0)):     # keep growing the ray until it collides with the wall
-        step = step + 20
-        distance = step
-    elif line_mask.overlap(TRACK_BORDER_MASK, (0,0)):       # save point of collision and calculate distance to it
-        poc = line_mask.overlap(TRACK_BORDER_MASK, (0,0))
-        pygame.draw.line(surface, (0,255,0), (ray_start_mid), poc, 1)
-        distance = calculate_distance((car.x, car.y), poc)
-        # print("Ray collision detected on " + str(poc) + "; Distance: " + str(distance))
-
-    win.blit(surface, (0, 0))
-    return distance
-
-
-def move_AI(car, predictions):
+def move_AI(car, predictions, threshold=0.5):
     moving = False
 
-    if predictions[0, 2]:
+    if predictions[0, 2] > threshold:
         if not predictions[0, 1]:
             car.rotate(left=True)
         else:
             car.rotate(right=True)
-    if predictions[0, 3]:
+    if predictions[0, 3] > threshold:
         if not predictions[0, 1]:
             car.rotate(right=True)
         else:
             car.rotate(left=True)
-    if predictions[0, 0]:
+
+    if predictions[0, 0] > threshold:
         moving = True
         car.move_forward()
-    if predictions[0, 1]:
+    if predictions[0, 1] > threshold:
         moving = True
         car.move_backward()
 
@@ -104,7 +78,7 @@ def move_AI(car, predictions):
 
 
 
-
+car = Car()
 step = step2 = step3 = 5
 running = True
 while running:
@@ -116,36 +90,31 @@ while running:
             running = False
             break
         
-    draw(WIN, car)
+    draw(WIN)
     move_player(car, keys)
 
     if car.collide(TRACK_BORDER_MASK) != None:
-        pygame.draw.circle(WIN, (255, 0, 0), car.collide(TRACK_BORDER_MASK), 4)
-        if car.vel == 0:    # if stuck, force the car the other way
-            unstuck(car, keys)
-        else:
-            car.hit_wall()
+        car.hit_wall()
+    else:
+
+        ray_end_frontside = (car.x + math.cos(math.radians(car.angle)) * step, car.y - math.sin(math.radians(car.angle)) * step)
+        ray_end_leftside = (car.x + math.cos(math.radians(car.angle + 90)) * step2, car.y - math.sin(math.radians(car.angle + 90)) * step2)
+        ray_end_rightside = (car.x + math.cos(math.radians(car.angle - 90)) * step3, car.y - math.sin(math.radians(car.angle - 90)) * step3)
+
+        rays_surface = pygame.Surface((WIN_SIZE[0], WIN_SIZE[1]), pygame.SRCALPHA)
+        rays_surface2 = pygame.Surface((WIN_SIZE[0], WIN_SIZE[1]), pygame.SRCALPHA)
+        rays_surface3 = pygame.Surface((WIN_SIZE[0], WIN_SIZE[1]), pygame.SRCALPHA)
+        step = car.draw_rays(WIN, rays_surface, step, ray_end_frontside, TRACK_BORDER_MASK)
+        step2 = car.draw_rays(WIN, rays_surface2, step2, ray_end_leftside, TRACK_BORDER_MASK)
+        step3 = car.draw_rays(WIN, rays_surface3, step3, ray_end_rightside, TRACK_BORDER_MASK)
+
+        distanceV = [step, step2, step3]
+        input_data = np.array(distanceV).reshape(1, 3)
+        predictions = car.model.predict(input_data)
+        print(predictions)
+        print()
     
-
-    ray_end_frontside = (car.x + math.cos(math.radians(car.angle)) * step, car.y - math.sin(math.radians(car.angle)) * step)
-    ray_end_leftside = (car.x + math.cos(math.radians(car.angle + 90)) * step2, car.y - math.sin(math.radians(car.angle + 90)) * step2)
-    ray_end_rightside = (car.x + math.cos(math.radians(car.angle - 90)) * step3, car.y - math.sin(math.radians(car.angle - 90)) * step3)
-
-    rays_surface = pygame.Surface((WIN_SIZE[0], WIN_SIZE[1]), pygame.SRCALPHA)
-    rays_surface2 = pygame.Surface((WIN_SIZE[0], WIN_SIZE[1]), pygame.SRCALPHA)
-    rays_surface3 = pygame.Surface((WIN_SIZE[0], WIN_SIZE[1]), pygame.SRCALPHA)
-    step = draw_rays(WIN, rays_surface, step, ray_end_frontside)
-    step2 = draw_rays(WIN, rays_surface2, step2, ray_end_leftside)
-    step3 = draw_rays(WIN, rays_surface3, step3, ray_end_rightside)
-
-    distanceV = [step, step2, step3]
-    print(distanceV)
-
-    input_data = np.array(distanceV).reshape(1, 3)
-    predictions = model.predict(input_data)
-    print(predictions)
- 
-    move_AI(car, predictions)
+        move_AI(car, predictions)
 
     pygame.display.update()
 
