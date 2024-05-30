@@ -11,8 +11,8 @@ def blit_rotate_center(win, image, top_left, angle):
     new_rect = rotated_image.get_rect(center=image.get_rect(topleft=top_left).center)
     win.blit(rotated_image, new_rect.topleft)
 
-def calculate_distance(start_point, end_point):
-    cateta1 = abs(end_point[0] - start_point[0])
-    cateta2 = abs(end_point[1] - start_point[1])
-    distance = int(math.sqrt(cateta1*cateta1 + cateta2*cateta2))
-    return distance
+def calculate_line_endpoints(start_x, start_y, angle, length):
+    radians = math.radians(angle)
+    end_x = start_x + length * math.cos(radians)
+    end_y = start_y - length * math.sin(radians)
+    return end_x, end_y
