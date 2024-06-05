@@ -16,3 +16,8 @@ def calculate_line_endpoints(start_x, start_y, angle, length):
     end_x = start_x + length * math.cos(radians)
     end_y = start_y - length * math.sin(radians)
     return end_x, end_y
+
+def draw_rays(surface, start_pos, directions, angle, length):
+    for d in directions:
+        end_x, end_y = calculate_line_endpoints(start_pos[0], start_pos[1], angle + d, length)
+        pygame.draw.line(surface, (0, 255, 0), start_pos, (end_x, end_y), 1)

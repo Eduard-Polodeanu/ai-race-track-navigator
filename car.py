@@ -10,6 +10,8 @@ MAX_VELOCITY = 4
 ROTATION_VELOCITY = 4
 ACCELERATION = 0.1
 
+FRONT_RAYS_DIRECTIONS = [0, -30, 30]
+LATERAL_RAYS_DIRECTION = [-90, 90]
 
 class Car:
     def __init__(self):
@@ -22,6 +24,8 @@ class Car:
         self.max_vel = MAX_VELOCITY
         self.rotation_vel = ROTATION_VELOCITY
         self.acceleration = ACCELERATION
+        self.front_rays_directions = FRONT_RAYS_DIRECTIONS
+        self.lateral_rays_directions = LATERAL_RAYS_DIRECTION
 
 
     def draw(self, win):
