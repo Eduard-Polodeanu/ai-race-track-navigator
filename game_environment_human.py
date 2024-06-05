@@ -1,7 +1,7 @@
 from enum import Enum
 import pygame
 from car import Car
-from utils import draw_rays
+from utils import draw_checkpoint_onclick, draw_rays, is_point_on_line
 
 pygame.init()
 
@@ -28,16 +28,26 @@ class GameEnvironment:
         self.car = car
         self.reset()
 
-
     def reset(self):
         self.game_iteration = 0
         self.car.reset()
         self.score = 0
+        self.reset_checkpoints()
+        self.finish_line_pos = [(205, 30), (205, 130)]
+
+    def reset_checkpoints(self):
+        self.checkpoint_pos = []
+        self.all_checkpoints = [[(721, 9), (726, 159)], [(803, 10), (808, 154)], [(900, 8), (890, 148)]]
 
     def play_step(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
+                print('Final score: ', self.score)
+                quit()
+            if event.type == pygame.MOUSEBUTTONDOWN:
+                click_pos = pygame.mouse.get_pos()
+                self.checkpoint_pos.append(click_pos)
 
         self.keys = pygame.key.get_pressed()
     
@@ -60,9 +70,19 @@ class GameEnvironment:
 
         is_game_over = False
         if self.car.collide(TRACK_BORDER_MASK) != None:
-            is_game_over = True
-            return is_game_over, self.score
+            self.reset()
+            self.score -= 10
+            # is_game_over = True
+            # return is_game_over, self.score
         
+        # checkpoint collision
+        if self.all_checkpoints and is_point_on_line(self.car.center_pos, self.all_checkpoints[0], max(self.car.img.get_width(), self.car.img.get_height())/2):
+            del self.all_checkpoints[0]
+            self.score += 10
+
+        # finish line collision
+        if not self.all_checkpoints and is_point_on_line(self.car.center_pos, self.finish_line_pos, max(self.car.img.get_width(), self.car.img.get_height())/2):
+            self.reset_checkpoints()
 
         self.draw()
         self.clock.tick(FPS)
@@ -93,6 +113,10 @@ class GameEnvironment:
         if mask_lateral_rays.overlap(TRACK_BORDER_MASK, (0,0)):
             print("Danger: car is close to the wall! (lateral side)")
         """
+        
+        self.checkpoint_pos, self.all_checkpoints = draw_checkpoint_onclick(self.window, self.checkpoint_pos, self.all_checkpoints)        
+        pygame.draw.line(self.window, (0, 0, 255), self.finish_line_pos[0], self.finish_line_pos[1], 3)
+        
 
         pygame.display.flip()
 
@@ -134,6 +158,6 @@ if __name__ == '__main__':
         if is_game_over == True:
             running = False
 
-    print('Final score: ', score)
+    print('Final score: ', score)   # e degeaba daca resetez jocul la coliziune si nu returnez is_game_over in play_step()
 
     pygame.quit()
