@@ -10,8 +10,8 @@ MAX_VELOCITY = 4
 ROTATION_VELOCITY = 4
 ACCELERATION = 0.1
 
-FRONT_RAYS_DIRECTIONS = [0, -30, 30]
-LATERAL_RAYS_DIRECTION = [-90, 90]
+FRONT_RAYS_DIRECTIONS = [0, -15, 15]
+LATERAL_RAYS_DIRECTION = [-90, 90, -60, 60]
 
 class Car:
     def __init__(self):
@@ -26,6 +26,7 @@ class Car:
         self.acceleration = ACCELERATION
         self.front_rays_directions = FRONT_RAYS_DIRECTIONS
         self.lateral_rays_directions = LATERAL_RAYS_DIRECTION
+        self.danger = [False, False]    # [wall in front, wall to side]
 
 
     def draw(self, win):
