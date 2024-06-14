@@ -4,14 +4,15 @@ from utils import blit_rotate_center, scale_image
 
 CAR = scale_image(pygame.image.load("assets/car.png"), 0.5)
 CAR_MASK = pygame.mask.from_surface(scale_image(pygame.image.load("assets/car-hitbox.png"), 0.5))
-CAR_START_POS = (600, 128)
+CAR_START_POS = (900, 55)
 
-MAX_VELOCITY = 4
-ROTATION_VELOCITY = 4
-ACCELERATION = 0.1
+MAX_VELOCITY = 3.5
+ROTATION_VELOCITY = 6
+ACCELERATION = 0.05
 
-FRONT_RAYS_DIRECTIONS = [0, -15, 15]
-LATERAL_RAYS_DIRECTION = [-90, 90, -60, 60]
+FRONT_RAYS_DIRECTIONS = [0]
+LEFT_RAYS_DIRECTION = [-90, -60, -15]
+RIGHT_RAYS_DIRECTION = [90, 60, 15]
 
 class Car:
     def __init__(self):
@@ -25,8 +26,9 @@ class Car:
         self.rotation_vel = ROTATION_VELOCITY
         self.acceleration = ACCELERATION
         self.front_rays_directions = FRONT_RAYS_DIRECTIONS
-        self.lateral_rays_directions = LATERAL_RAYS_DIRECTION
-        self.danger = [False, False]    # [wall in front, wall to side]
+        self.left_rays_directions = LEFT_RAYS_DIRECTION
+        self.right_rays_directions = RIGHT_RAYS_DIRECTION
+        self.danger = [False, False, False]    # [wall in front, wall to side]
 
 
     def draw(self, win):
@@ -68,6 +70,7 @@ class Car:
         self.x, self.y = CAR_START_POS
         self.angle = 0
         self.vel = 0
+        self.center_pos = (self.x + self.img.get_width()/2, self.y + self.img.get_height()/2)
 
     def hit_wall(self):
         self.reset()

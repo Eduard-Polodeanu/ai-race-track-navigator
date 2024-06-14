@@ -1,30 +1,36 @@
 import torch
 import random
-import numpy as np
 from collections import deque
+from car import Car
 from game_environment_AI import GameEnvironmentAI, Direction
+from model import Linear_QNet, QTrainer
+from utils import plot
 
 MAX_MEMORY = 100000
 BATCH_SIZE = 1000
 LR = 0.001
 
+MAX_CHECKPOINT_DIST = 300
 
 class Agent:
     def __init__(self):
         self.number_of_games = 0
-        self.epsilon = 0    # control randomness
+        self.epsilon = 0
         self.gamma = 0.9    # discount rate
         self.memory = deque(maxlen=MAX_MEMORY)  # when it gets full it pops the element from the left side of the queue
-        self.model = None
-        self.trainer = None
+        self.model = Linear_QNet(5, 256, 6)
+        self.trainer = QTrainer(self.model, lr=LR, gamma=self.gamma)
         
 
     def get_state(self, game):
         state = [
-            game.car.danger[0],
-            game.car.danger[1]
+            round(game.dist_to_checkpoint / MAX_CHECKPOINT_DIST, 3), # normalize
+            round(game.car.vel / game.car.max_vel, 3),
+            int(game.car.danger[0]),
+            int(game.car.danger[1]),
+            int(game.car.danger[2])
         ]
-        return np.array(state, dtype=int)
+        return state
 
     def store_in_memory(self, state, action, reward, next_state, is_step_done):     # store a state as a tuple
         self.memory.append((state, action, reward, next_state, is_step_done))
@@ -42,24 +48,24 @@ class Agent:
         self.trainer.train_step(state, action, reward, next_state, is_step_done)
 
     def get_action(self, state):
-        self.epsilon = 50 - self.number_of_games
-        if random.randint(0, 200) < self.epsilon:
-            final_move = random.randint(1, 9)
+        self.epsilon = 100 - self.number_of_games
+        if random.randint(0, 400) < self.epsilon:
+            final_move = random.randint(1, 6)
         else:
             state0 = torch.tensor(state, dtype=torch.float)     # convert the state (numpy array) into a pytorch tensor
-            prediction = self.model.predict(state0)
-            final_move = torch.argmax(prediction).item()
-
+            prediction = self.model(state0)
+            final_move = torch.argmax(prediction).item() + 1
+            # print("final move" , final_move)
         return final_move
 
 
-def train():
+def train(car):
     scores = []
     average_scores = []
     total_score = 0
     record_score = 0
     agent = Agent()
-    game = GameEnvironmentAI()
+    game = GameEnvironmentAI(car)
 
     while True:
         state_current = agent.get_state(game)
@@ -80,6 +86,13 @@ def train():
 
             print("Game #", agent.number_of_games, "score: ", current_score, "record: ", record_score)
 
+            scores.append(current_score)
+            total_score += current_score
+            average_score = total_score / agent.number_of_games
+            average_scores.append(average_score)
+            plot(scores, average_scores)
+                  
 
 if __name__ == '__main__':
-    train()
+    car = Car()
+    train(car)

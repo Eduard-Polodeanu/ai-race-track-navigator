@@ -1,7 +1,7 @@
 from enum import Enum
 import pygame
 from car import Car
-from utils import draw_checkpoint_onclick, draw_rays, is_point_on_line
+from utils import calculate_dist_points, calculate_midpoint, draw_checkpoint_onclick, draw_rays, is_point_on_line
 
 pygame.init()
 
@@ -13,7 +13,9 @@ WIN_SIZE = (1280, 720)
 FPS = 60
 
 surface_front_rays = pygame.Surface((WIN_SIZE[0], WIN_SIZE[1]), pygame.SRCALPHA)
-surface_lateral_rays = pygame.Surface((WIN_SIZE[0], WIN_SIZE[1]), pygame.SRCALPHA)
+surface_left_rays = pygame.Surface((WIN_SIZE[0], WIN_SIZE[1]), pygame.SRCALPHA)
+surface_right_rays = pygame.Surface((WIN_SIZE[0], WIN_SIZE[1]), pygame.SRCALPHA)
+
 
 class Direction(Enum):
     FORWARD = 1
@@ -36,11 +38,12 @@ class GameEnvironment:
         self.car.reset()
         self.score = 0
         self.reset_checkpoints()
-        self.finish_line_pos = [(205, 30), (205, 130)]
 
     def reset_checkpoints(self):
         self.checkpoint_pos = []
-        self.all_checkpoints = [[(721, 9), (726, 159)], [(803, 10), (808, 154)], [(900, 8), (890, 148)]]
+        # self.all_checkpoints = [[(661, 9), (666, 159)], [(761, 10), (766, 154)], [(861, 8), (866, 148)], [(961, 8), (966, 148)], [(1035, 18), (1015, 130)], [(1113, 69), (1052, 151)], [(1076, 191), (1178, 147)], [(1089, 238), (1188, 232)], [(1075, 303), (1174, 306)], [(1174, 331), (1074, 390)], [(1222, 342), (1187, 432)], [(1216, 468), (1277, 466)], [(1196, 505), (1257, 582)], [(1147, 510), (1156, 612)], [(1056, 539), (1093, 624)], [(932, 588), (935, 678)], [(905, 550), (828, 539)], [(932, 474), (856, 442)], [(891, 329), (973, 300)], [(827, 221), (842, 308)], [(612, 307), (646, 379)], [(530, 313), (503, 390)], [(455, 255), (383, 328)], [(288, 202), (334, 284)], [(214, 335), (298, 339)], [(241, 401), (347, 414)], [(236, 450), (292, 504)], [(174, 463), (129, 564)], [(138, 419), (65, 454)], [(75, 264), (4, 295)], [(7, 133), (93, 187)], [(163, 30), (174, 128)]]
+        self.all_checkpoints = [[(961, 8), (966, 148)], [(1035, 18), (1015, 130)], [(1113, 69), (1052, 151)], [(1076, 191), (1178, 147)], [(1089, 238), (1188, 232)], [(1075, 303), (1174, 306)], [(1174, 331), (1074, 390)], [(1222, 342), (1187, 432)], [(1216, 468), (1277, 466)], [(1196, 505), (1257, 582)], [(1147, 510), (1156, 612)], [(1056, 539), (1093, 624)], [(932, 588), (935, 678)], [(905, 550), (828, 539)], [(932, 474), (856, 442)], [(891, 329), (973, 300)], [(827, 221), (842, 308)], [(612, 307), (646, 379)], [(530, 313), (503, 390)], [(455, 255), (383, 328)], [(288, 202), (334, 284)], [(214, 335), (298, 339)], [(241, 401), (347, 414)], [(236, 450), (292, 504)], [(174, 463), (129, 564)], [(138, 419), (65, 454)], [(75, 264), (4, 295)], [(7, 133), (93, 187)], [(163, 30), (174, 128)]]
+        self.finish_line_pos = [(205, 30), (205, 130)]
 
     def play_step(self):
         for event in pygame.event.get():
@@ -94,14 +97,25 @@ class GameEnvironment:
             # print("Danger: car is close to the wall! (front side)")
         else:
             self.car.danger[0] = False
-            
-        mask_lateral_rays = pygame.mask.from_surface(surface_lateral_rays.convert_alpha())
-        if mask_lateral_rays.overlap(TRACK_BORDER_MASK, (0,0)):
+        mask_left_rays = pygame.mask.from_surface(surface_left_rays.convert_alpha())
+        if mask_left_rays.overlap(TRACK_BORDER_MASK, (0,0)):
             self.car.danger[1] = True
-            # print("Danger: car is close to the wall! (lateral side)")
+            # print("Danger: car is close to the wall! (left side)")
         else:
             self.car.danger[1] = False
+        mask_right_rays = pygame.mask.from_surface(surface_left_rays.convert_alpha())
+        if mask_right_rays.overlap(TRACK_BORDER_MASK, (0,0)):
+            self.car.danger[2] = True
+            # print("Danger: car is close to the wall! (right side)")
+        else:
+            self.car.danger[2] = False
 
+        # distance to next checkpoint
+        if self.all_checkpoints:
+            ck = self.all_checkpoints[0]
+            checkpoint_midpoint = calculate_midpoint(ck[0], ck[1])
+            self.dist_to_checkpoint = int(calculate_dist_points(checkpoint_midpoint, (self.car.x, self.car.y)))
+            # print(self.dist_to_checkpoint)
 
         self.draw()
         self.clock.tick(FPS)
@@ -116,11 +130,14 @@ class GameEnvironment:
         self.car.draw(self.window)
 
         surface_front_rays.fill((0,0,0,0))     # reset ray surface
-        surface_lateral_rays.fill((0,0,0,0))
+        surface_left_rays.fill((0,0,0,0))
+        surface_right_rays.fill((0,0,0,0))
         draw_rays(surface_front_rays, self.car.center_pos, self.car.front_rays_directions, self.car.angle, 50)
-        draw_rays(surface_lateral_rays, self.car.center_pos, self.car.lateral_rays_directions, self.car.angle, 35) 
+        draw_rays(surface_left_rays, self.car.center_pos, self.car.left_rays_directions, self.car.angle, 15) 
+        draw_rays(surface_right_rays, self.car.center_pos, self.car.right_rays_directions, self.car.angle, 15) 
         self.window.blit(surface_front_rays, (0,0))
-        self.window.blit(surface_lateral_rays, (0,0))
+        self.window.blit(surface_left_rays, (0,0))
+        self.window.blit(surface_right_rays, (0,0))
         
         self.checkpoint_pos, self.all_checkpoints = draw_checkpoint_onclick(self.window, self.checkpoint_pos, self.all_checkpoints)        
         pygame.draw.line(self.window, (0, 0, 255), self.finish_line_pos[0], self.finish_line_pos[1], 3)
