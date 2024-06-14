@@ -18,7 +18,7 @@ class Agent:
         self.epsilon = 0
         self.gamma = 0.9    # discount rate
         self.memory = deque(maxlen=MAX_MEMORY)  # when it gets full it pops the element from the left side of the queue
-        self.model = Linear_QNet(5, 256, 6)
+        self.model = Linear_QNet(6, 256, 6)
         self.trainer = QTrainer(self.model, lr=LR, gamma=self.gamma)
         
 
@@ -26,6 +26,7 @@ class Agent:
         state = [
             round(game.dist_to_checkpoint / MAX_CHECKPOINT_DIST, 3), # normalize
             round(game.car.vel / game.car.max_vel, 3),
+            round(game.angle_to_checkpoint, 3),
             int(game.car.danger[0]),
             int(game.car.danger[1]),
             int(game.car.danger[2])
@@ -48,8 +49,8 @@ class Agent:
         self.trainer.train_step(state, action, reward, next_state, is_step_done)
 
     def get_action(self, state):
-        self.epsilon = 100 - self.number_of_games
-        if random.randint(0, 400) < self.epsilon:
+        self.epsilon = 25 - self.number_of_games
+        if random.randint(0, 200) < self.epsilon:
             final_move = random.randint(1, 6)
         else:
             state0 = torch.tensor(state, dtype=torch.float)     # convert the state (numpy array) into a pytorch tensor

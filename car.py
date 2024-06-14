@@ -4,7 +4,7 @@ from utils import blit_rotate_center, scale_image
 
 CAR = scale_image(pygame.image.load("assets/car.png"), 0.5)
 CAR_MASK = pygame.mask.from_surface(scale_image(pygame.image.load("assets/car-hitbox.png"), 0.5))
-CAR_START_POS = (900, 55)
+CAR_START_POS = (630, 105)
 
 MAX_VELOCITY = 3.5
 ROTATION_VELOCITY = 6

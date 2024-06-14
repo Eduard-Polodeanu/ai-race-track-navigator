@@ -61,6 +61,14 @@ def is_point_on_line(point, line_segment, tolerance=1):
 
     return distance <= tolerance
 
+def calculate_angle(pos1, pos2):
+    x1, y1 = pos1
+    x2, y2 = pos2
+    delta_x = x2 - x1
+    delta_y = y2 - y1
+    angle = math.atan2(delta_y, delta_x)  # Angle in radians
+    angle_degrees = math.degrees(angle)  # Convert angle to degrees (optional)
+    return angle_degrees
 
 
 plt.ion()
